@@ -1,0 +1,36 @@
+{
+  "pluginName": "Local Server",
+  "description": "使用 Http 协议创建本地静态资源服务器",
+  "version": "1.0.0",
+  "author": "paso",
+  "main": "dist/index.html",
+  "preload": "preload.js",
+  "logo": "logo.svg",
+  "development": {
+    "main": "http://localhost:10987"
+  },
+  "pluginSetting": {
+    "single": true
+  },
+  "features": [
+    {
+      "code": "hash",
+      "explain": "求一致性哈希的分片数值",
+      "icon": "shard.png",
+      "cmds": [
+        "hash shard",
+        "哈希",
+        "分片",
+        {
+          "type": "regex",
+          "label": "对该内容进行哈希分片",
+          "match": "/[\\da-f]+/"
+        },
+        {
+          "type": "over",
+          "label": "对该内容进行哈希分片"
+        }
+      ]
+    }
+  ]
+}

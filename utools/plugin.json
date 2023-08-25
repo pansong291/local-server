@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "author": "paso",
   "main": "dist/index.html",
-  "preload": "preload.js",
-  "logo": "logo.svg",
+  "preload": "dist/preload.js",
+  "logo": "logo.png",
   "development": {
     "main": "http://localhost:10987"
   },
@@ -14,21 +14,31 @@
   },
   "features": [
     {
-      "code": "hash",
-      "explain": "求一致性哈希的分片数值",
-      "icon": "shard.png",
+      "code": "launcher",
+      "explain": "打开主面板",
+      "icon": "",
       "cmds": [
-        "hash shard",
-        "哈希",
-        "分片",
+        "Local Server",
+        "本地服务"
+      ]
+    },
+    {
+      "code": "add-server",
+      "explain": "添加服务",
+      "icon": "",
+      "cmds": [
         {
-          "type": "regex",
-          "label": "对该内容进行哈希分片",
-          "match": "/[\\da-f]+/"
+          "type": "files",
+          "label": "加入服务列表",
+          "fileType": "directory",
+          "minLength": 1
         },
         {
-          "type": "over",
-          "label": "对该内容进行哈希分片"
+          "type": "window",
+          "label": "添加当前目录",
+          "match": {
+            "app": ["explorer.exe", "Finder.app"]
+          }
         }
       ]
     }

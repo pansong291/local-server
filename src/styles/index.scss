@@ -1,2 +1,8 @@
+@use "element-plus/theme-chalk" as *;
 // import dark theme
 @use "element-plus/theme-chalk/src/dark/css-vars.scss" as *;
+
+body {
+  margin: 0;
+  background-color: var(--el-bg-color);
+}

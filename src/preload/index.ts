@@ -222,7 +222,7 @@ function createController(base: string, cors?: boolean, showDir?: boolean | null
     const resHeaders: Record<string, string> = {}
     if (cors) resHeaders['Access-Control-Allow-Origin'] = '*'
     const u = url.parse(req.url)
-    const pathname = u.pathname || '/'
+    const pathname = decodeURIComponent(u.pathname || '/')
     let filePath = path.join(base, pathname)
     const dirPath = filePath
 

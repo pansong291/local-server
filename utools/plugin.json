@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "author": "paso",
   "main": "dist/index.html",
-  "preload": "dist/preload.js",
+  "preload": "preload.js",
   "logo": "logo.png",
   "development": {
     "main": "http://localhost:10987"

@@ -70,7 +70,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   (e: 'update:config', d: ConfigItem): void
-  (e: 'stateChange', d: boolean): void
+  (e: 'activeChange', d: boolean): void
   (e: 'delete', id: string): void
 }>()
 
@@ -114,7 +114,7 @@ function toggleServer() {
       serverInfo.value = undefined
       delete window._servers[data.value.id]
       console.log('stopped')
-      emit('stateChange', false)
+      emit('activeChange', false)
     }).finally(() => {
       waiting.value = false
     })
@@ -132,7 +132,7 @@ function toggleServer() {
       serverInfo.value = info
       window._servers[data.value.id] = info
       console.log(info)
-      emit('stateChange', true)
+      emit('activeChange', true)
     }).catch(e => {
       msg.value = e?.message || e
     }).finally(() => {

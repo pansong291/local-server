@@ -16,13 +16,13 @@
         <el-collapse-item v-for="item in stateItems" :key="item.config.id" :name="item.config.id">
           <template #title>
             <el-space>
-              <el-tag v-if="item.state" type="success" effect="plain" round>运行中</el-tag>
+              <el-tag v-if="item.running" type="success" effect="plain" round>运行中</el-tag>
               <el-tag v-else type="info" effect="plain" round>未启动</el-tag>
               {{ activeName === item.config.id ? '' : item.config.base }}
             </el-space>
           </template>
           <el-card shadow="hover">
-            <server-item v-model:config="item.config" @stateChange="(s) => item.state = s" @delete="deleteItem(item.config.id)" />
+            <server-item v-model:config="item.config" @activeChange="(_) => item.running = _" @delete="deleteItem(item.config.id)" />
           </el-card>
         </el-collapse-item>
       </el-collapse>
@@ -37,7 +37,7 @@ import { Plus } from '@element-plus/icons-vue'
 import { isDark, toggleDark } from '@/composables'
 import ServerItem from '@/components/ServerItem.vue'
 import { Ref } from 'vue'
-import { StatedConfigItem } from '@/types'
+import { StatedConfigItem, StorageKey } from '@/types'
 import { newConfigItem } from '@/utils'
 
 const activeName: Ref<string> = ref('1')
@@ -59,6 +59,25 @@ function deleteItem(id: string) {
     stateItems.value.splice(ind, 1)
   }
 }
+
+onBeforeMount!(() => {
+  const serverListStr = window.utools.dbStorage.getItem(StorageKey.SERVER_LIST)
+  if (serverListStr) {
+    try {
+      const serverList = JSON.parse(serverListStr)
+      if (Array.isArray(serverList)) {
+        for (const server of serverList) {
+          stateItems.value.push({
+            config: newConfigItem(undefined, server)
+          })
+        }
+      }
+    } catch (e) {
+    }
+  }
+  const activeItem = window.utools.dbStorage.getItem(StorageKey.ACTIVE_ITEM)
+  if (activeItem) activeName.value = activeItem
+})
 
 window.utools?.onPluginEnter((action) => {
   console.log('active with action:', action)
@@ -87,6 +106,13 @@ window.utools?.onPluginEnter((action) => {
 })
 window.utools?.onPluginOut((processExit) => {
   if (processExit) {
+    const newListStr = JSON.stringify(stateItems.value.map(it => it.config))
+    if (newListStr !== window.utools.dbStorage.getItem(StorageKey.SERVER_LIST)) {
+      window.utools.dbStorage.setItem(StorageKey.SERVER_LIST, newListStr)
+    }
+    if (activeName.value !== window.utools.dbStorage.getItem(StorageKey.ACTIVE_ITEM)) {
+      window.utools.dbStorage.setItem(StorageKey.ACTIVE_ITEM, activeName.value)
+    }
     Object.values(window._servers).forEach(info => {
       info.shutdown()
     })

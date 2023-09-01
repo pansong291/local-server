@@ -8,12 +8,14 @@ export function uuid() {
   })
 }
 
-export function newConfigItem(path?: string): ConfigItem {
+export function newConfigItem(path?: string, old?: ConfigItem): ConfigItem {
   return {
-    id: uuid(),
-    base: path || '',
-    netFamily: 'IPv4',
-    netInterface: 'inner',
-    showDir: 'default'
+    id: old?.id || uuid(),
+    base: path || old?.base || '',
+    netFamily: old?.netFamily || 'IPv4',
+    netInterface: old?.netInterface || 'inner',
+    showDir: old?.showDir || 'default',
+    cors: old?.cors || undefined,
+    port: old?.port || undefined
   }
 }

@@ -9,6 +9,11 @@ export type ConfigItem = {
 }
 
 export type StatedConfigItem = {
-  state?: boolean,
+  running?: boolean,
   config: ConfigItem
+}
+
+export enum StorageKey {
+  SERVER_LIST = 'server-list',
+  ACTIVE_ITEM = 'active-item'
 }

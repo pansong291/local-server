@@ -15,6 +15,9 @@ defineProps<{
   padding: 8px 16px;
   border-radius: 4px;
   margin: 20px 0;
+  font-size: var(--el-font-size-base);
+  line-height: 1.5;
+  color: var(--el-text-color-regular);
   background-color: rgba(var(--el-color-primary-rgb), .2);
   border-left: 5px solid var(--el-color-primary);
 }

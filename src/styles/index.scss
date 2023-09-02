@@ -2,7 +2,46 @@
 // import dark theme
 @use "element-plus/theme-chalk/src/dark/css-vars.scss" as *;
 
+:root {
+  --font-family-mono: "JetBrains Mono", source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
 body {
   margin: 0;
   background-color: var(--el-bg-color);
+}
+
+code {
+  margin: 0;
+  border-radius: 4px;
+  padding: .15rem .5rem;
+  font-family: var(--font-family-mono);
+  font-size: var(--el-font-size-base);
+  color: var(--el-text-color-regular);
+  line-height: 1.4;
+  background-color: var(--el-fill-color-light);
+}
+
+.monospace {
+  font-family: var(--font-family-mono);
+}
+
+ul {
+  margin: 8px 0;
+
+  li {
+    margin: 4px 0;
+  }
+}
+
+p {
+  margin: 8px 0;
+
+  &:empty::after {
+    content: 'x';
+    display: block;
+    pointer-events: none;
+    color: transparent;
+    opacity: 0;
+  }
 }

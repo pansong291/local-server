@@ -331,7 +331,8 @@ function createController(base, cors = false, showDir = null) {
       }
 
       // return the document
-      resHeaders['Content-Type'] = mime.lookupExtension(path.extname(filePath))
+      const defMime = mime.lookupExtension(path.extname(filePath))
+      resHeaders['Content-Type'] = window._cache?.globalMimeFunction?.(filePath, defMime) || defMime
       res.writeHead(200, resHeaders)
       res.end(data)
     })

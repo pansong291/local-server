@@ -33,7 +33,7 @@
         <el-radio-button label="never">永不</el-radio-button>
       </el-radio-group>
     </el-form-item>
-    <el-form-item label="启用跨域">
+    <el-form-item label="允许跨域">
       <el-switch v-model="data.cors" />
     </el-form-item>
     <el-form-item>
@@ -131,7 +131,6 @@ function toggleServer() {
     }).then((info) => {
       serverInfo.value = info
       window._servers[data.value.id] = info
-      console.log(info)
       emit('activeChange', true)
     }).catch(e => {
       msg.value = e?.message || e

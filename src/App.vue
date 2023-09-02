@@ -3,6 +3,7 @@
     <el-header>
       <el-space alignment="center" size="large">
         <el-button :icon="Plus" type="primary" circle @click="addConfigItem('', true)" />
+        <el-button :icon="Setting" circle @click="drawerOpened = true" />
         <el-switch
           :style="`--el-switch-on-color: #2c2c2c; --el-switch-off-color: #f2f2f2; --el-switch-border-color: var(--el-border-color);`"
           :model-value="isDark"
@@ -28,20 +29,47 @@
       </el-collapse>
     </el-main>
   </el-container>
+  <el-drawer v-model="drawerOpened" direction="rtl" size="70%" :with-header="false">
+    <div class="drawer-title-line">
+      <el-text tag="h1" size="large">设置文件 MIME 类型</el-text>
+      <el-space>
+        <el-button type="primary" plain @click="onDrawerOkClick">确定</el-button>
+        <el-button plain @click="functionText = globalMimeFuncStr">重置</el-button>
+        <el-button text circle :icon="Close" @click="drawerOpened = false"/>
+      </el-space>
+    </div>
+    <tip-box type="primary">
+      <ul>
+        <li>参数 <code>p</code> 为文件路径，<code>m</code> 为内置默认 MIME 类型</li>
+        <li>返回值应为该文件对应的 MIME 类型，也可返回任意假值或不返回，该值将直接应用于响应头中的 Content-Type</li>
+        <li>可使用 <code>throw</code> 语句观察表达式的值，例如 <code>throw 1 + 2</code></li>
+      </ul>
+    </tip-box>
+    <func-textarea v-model="functionText" @update:validate="(_) => mimeFuncInfo = _" />
+    <tip-box v-if="!mimeFuncInfo.func" type="error">
+      <p class="monospace">{{ mimeFuncInfo.errMsg }}</p>
+    </tip-box>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import IconLight from '@/components/icon/IconLight.vue'
 import IconDark from '@/components/icon/IconDark.vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Close, Plus, Setting } from '@element-plus/icons-vue'
 import { isDark, toggleDark } from '@/composables'
 import ServerItem from '@/components/ServerItem.vue'
 import { Ref } from 'vue'
 import { StatedConfigItem, StorageKey } from '@/types'
-import { newConfigItem } from '@/utils'
+import { getMimeFunction, newConfigItem } from '@/utils'
+import FuncTextarea, { FunctionValidateInfo } from '@/components/FuncTextarea.vue'
+import TipBox from '@/components/TipBox.vue'
 
 const activeName: Ref<string> = ref('1')
 const stateItems: Ref<Array<StatedConfigItem>> = ref([])
+const drawerOpened: Ref<boolean> = ref(false)
+const globalMimeFuncStr: Ref<string> = ref('')
+const functionText: Ref<string> = ref('')
+const mimeFuncInfo: Ref<FunctionValidateInfo> = ref({})
 
 function addConfigItem(path?: string, active?: boolean) {
   const statItem: StatedConfigItem = {
@@ -60,8 +88,28 @@ function deleteItem(id: string) {
   }
 }
 
+function onDrawerOkClick() {
+  if (mimeFuncInfo.value.func) {
+    // 记录经过验证的函数内容并把函数挂载到 window 上
+    globalMimeFuncStr.value = functionText.value
+    window._cache.globalMimeFunction = mimeFuncInfo.value.func
+    drawerOpened.value = false
+  } else {
+    ElMessage.error('请先根据提示修正错误')
+  }
+}
+
 onBeforeMount!(() => {
-  const serverListStr = window.utools.dbStorage.getItem(StorageKey.SERVER_LIST)
+  const mimeFuncStr = window.utools?.dbStorage.getItem(StorageKey.GLOBAL_MIME_FUNC)
+  if (mimeFuncStr || mimeFuncStr === '') {
+    globalMimeFuncStr.value = mimeFuncStr
+  } else {
+    globalMimeFuncStr.value = `if (/\\btext\\b|.script/g.test(m))\n    return m + ';charset=utf-8'`
+  }
+  // 初始化并挂载函数到 window 上
+  functionText.value = globalMimeFuncStr.value
+  window._cache.globalMimeFunction = getMimeFunction(globalMimeFuncStr.value)
+  const serverListStr = window.utools?.dbStorage.getItem(StorageKey.SERVER_LIST)
   if (serverListStr) {
     try {
       const serverList = JSON.parse(serverListStr)
@@ -75,7 +123,7 @@ onBeforeMount!(() => {
     } catch (e) {
     }
   }
-  const activeItem = window.utools.dbStorage.getItem(StorageKey.ACTIVE_ITEM)
+  const activeItem = window.utools?.dbStorage.getItem(StorageKey.ACTIVE_ITEM)
   if (activeItem) activeName.value = activeItem
 })
 
@@ -87,7 +135,6 @@ window.utools?.onPluginEnter((action) => {
         if (action.payload?.length) {
           for (const item of action.payload) {
             if (item.isDirectory) {
-              console.log(item.path)
               addConfigItem(item.path, true)
             }
           }
@@ -96,7 +143,6 @@ window.utools?.onPluginEnter((action) => {
       case 'window':
         if (action.payload?.app) {
           window.utools.readCurrentFolderPath().then((dir) => {
-            console.log(dir)
             addConfigItem(dir, true)
           })
         }
@@ -106,6 +152,9 @@ window.utools?.onPluginEnter((action) => {
 })
 window.utools?.onPluginOut((processExit) => {
   if (processExit) {
+    if (globalMimeFuncStr.value !== window.utools.dbStorage.getItem(StorageKey.GLOBAL_MIME_FUNC)) {
+      window.utools.dbStorage.setItem(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
+    }
     const newListStr = JSON.stringify(stateItems.value.map(it => it.config))
     if (newListStr !== window.utools.dbStorage.getItem(StorageKey.SERVER_LIST)) {
       window.utools.dbStorage.setItem(StorageKey.SERVER_LIST, newListStr)
@@ -131,5 +180,10 @@ window.utools?.onPluginOut((processExit) => {
   align-items: center;
   justify-content: flex-end;
   border-bottom: 1px solid var(--el-border-color);
+}
+
+.drawer-title-line {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

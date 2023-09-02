@@ -19,6 +19,9 @@ declare module 'http-shutdown' {
 declare global {
   interface Window {
     utools: UToolsApi
+    _cache: {
+      globalMimeFunction?: (p: string, m: string) => string | undefined
+    }
     _preload: {
       startServer: (config: StartServerConfig) => Promise<ServerInfo>
     }

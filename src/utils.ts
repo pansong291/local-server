@@ -19,3 +19,10 @@ export function newConfigItem(path?: string, old?: ConfigItem): ConfigItem {
     port: old?.port || undefined
   }
 }
+
+export const mimeFuncPrefix = 'function (p, m) {'
+export const mimeFuncSuffix = '}'
+
+export function getMimeFunction(content: string) {
+  return new Function(`return ${mimeFuncPrefix}${content}${mimeFuncSuffix}`)()
+}

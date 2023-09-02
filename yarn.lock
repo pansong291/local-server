@@ -721,11 +721,6 @@ he@^1.2.0:
   resolved "https://registry.npmmirror.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
-http-shutdown@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/http-shutdown/-/http-shutdown-1.2.2.tgz#41bc78fc767637c4c95179bc492f312c0ae64c5f"
-  integrity sha512-S9wWkJ/VSY9/k4qcjG318bqJNruzE4HySUhFYknwmu6LBP97KLLfwNf+n4V1BHurvFNkSKLFnK/RsuUnRTf9Vw==
-
 human-signals@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/human-signals/-/human-signals-2.1.0.tgz#dc91fcba42e4d06e4abaed33b3e7a3c02f514ea0"
@@ -1247,11 +1242,6 @@ utools-api-types@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmmirror.com/utools-api-types/-/utools-api-types-4.0.0.tgz#5c1a33e64531be7ca68e96b0936e4aa6bbd1cdca"
   integrity sha512-YFY5jTDBzYdWV3CwkOf2pzbEcw3YLHvCJws+rejND1IWdWgWkXLP600hTUlMB5ordfSb4KiUkpcK8ReerHif0g==
-
-vite-plugin-optimizer@^1.4.2:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/vite-plugin-optimizer/-/vite-plugin-optimizer-1.4.2.tgz#45e2d3cc9d1c1c254d115648741fdfe0a470d41f"
-  integrity sha512-UNQy+J31b+DeEc2NCxV+WIkwyYPWGPjYsnXO4+gM26CKY5KJ47JeRjchR11F3qfR8MWDX1+425LZfkUyXOfGFA==
 
 vite@^4.4.9:
   version "4.4.9"

@@ -1,6 +1,5 @@
 /// <reference types="vite/client.d.ts" />
 /// <reference types="utools-api-types" />
-import url from 'url'
 import { ServerInfo, StartServerConfig } from '@/preload/types'
 import { Server } from 'net'
 

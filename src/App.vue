@@ -7,7 +7,7 @@
         <el-switch
           :style="`--el-switch-on-color: #2c2c2c; --el-switch-off-color: #f2f2f2; --el-switch-border-color: var(--el-border-color);`"
           :model-value="isDark"
-          @change="toggleDark"
+          @change="(_) => toggleDark(!!_)"
           :active-action-icon="IconDark"
           :inactive-action-icon="IconLight" />
       </el-space>
@@ -33,7 +33,7 @@
     <div class="drawer-title-line">
       <el-text tag="h1" size="large">设置文件 MIME 类型</el-text>
       <el-space>
-        <el-button type="primary" plain @click="onDrawerOkClick">确定</el-button>
+        <el-button type="primary" plain @click="onDrawerOkClick" :disabled="!mimeFuncInfo.func">确定</el-button>
         <el-button plain @click="functionText = globalMimeFuncStr">重置</el-button>
         <el-button text circle :icon="Close" @click="drawerOpened = false"/>
       </el-space>
@@ -94,8 +94,6 @@ function onDrawerOkClick() {
     globalMimeFuncStr.value = functionText.value
     window._cache.globalMimeFunction = mimeFuncInfo.value.func
     drawerOpened.value = false
-  } else {
-    ElMessage.error('请先根据提示修正错误')
   }
 }
 
@@ -106,7 +104,7 @@ onBeforeMount!(() => {
   } else {
     globalMimeFuncStr.value = `if (/\\btext\\b|.script/g.test(m))\n    return m + ';charset=utf-8'`
   }
-  // 初始化并挂载函数到 window 上
+  // 初始化函数, 由于 drawer 是懒加载, 需要手动把函数挂载到 window 上
   functionText.value = globalMimeFuncStr.value
   window._cache.globalMimeFunction = getMimeFunction(globalMimeFuncStr.value)
   const serverListStr = window.utools?.dbStorage.getItem(StorageKey.SERVER_LIST)
@@ -165,7 +163,7 @@ window.utools?.onPluginOut((processExit) => {
     Object.values(window._servers).forEach(info => {
       info.shutdown()
     })
-    window._servers = void 0
+    window._servers = {}
   }
 })
 </script>

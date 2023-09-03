@@ -84,8 +84,8 @@ const data = computed!({
 })
 const waiting: Ref<boolean> = ref(false)
 const serverInfo: Ref<ServerInfo | undefined> = ref()
-const msg: Ref<string> = ref()
-const qrcodeCanvas: Ref<Array<HTMLCanvasElement>> = ref(null)
+const msg: Ref<string> = ref('')
+const qrcodeCanvas: Ref<Array<HTMLCanvasElement> | null> = ref(null)
 const links = computed!(() => {
   if (!serverInfo.value) return
   return serverInfo.value!.address?.map(a => ({
@@ -140,7 +140,7 @@ function toggleServer() {
   }
 }
 
-function openUrl(url) {
+function openUrl(url: string) {
   window.utools.shellOpenExternal(url)
 }
 

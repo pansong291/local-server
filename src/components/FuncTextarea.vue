@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>()
 const varStyle: Ref<string> = ref(`--mono-before-content: '${mimeFuncPrefix}';--mono-after-content: '${mimeFuncSuffix}';`)
 
-const validateState: Ref<string> = ref()
+const validateState: Ref<'' | 'success' | 'error'> = ref('')
 const value = computed!({
   get() {
     return props.modelValue

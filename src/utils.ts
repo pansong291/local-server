@@ -14,6 +14,7 @@ export function newConfigItem(path?: string, old?: ConfigItem): ConfigItem {
     base: path || old?.base || '',
     netFamily: old?.netFamily || 'IPv4',
     netInterface: old?.netInterface || 'inner',
+    netProtocol: old?.netProtocol || 'http',
     showDir: old?.showDir || 'default',
     cors: old?.cors || undefined,
     port: old?.port || undefined

@@ -27,4 +27,5 @@ coverage
 *.sln
 *.sw?
 
-/utools/dist
+/utools/upx/web
+/utools/upx/index.js

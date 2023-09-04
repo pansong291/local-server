@@ -1,10 +1,10 @@
 {
   "pluginName": "Local Server",
   "description": "使用 Http 协议创建本地静态资源服务器",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "author": "paso",
-  "main": "dist/index.html",
-  "preload": "preload.js",
+  "main": "web/index.html",
+  "preload": "index.js",
   "logo": "logo.png",
   "development": {
     "main": "http://localhost:10987"

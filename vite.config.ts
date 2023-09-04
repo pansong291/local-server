@@ -42,6 +42,12 @@ export default defineConfig({
     port: 10987
   },
   build: {
-    outDir: 'utools/dist'
+    outDir: 'utools/upx/web',
+    rollupOptions: {
+      output: {
+        entryFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash].[ext]'
+      }
+    }
   }
 })

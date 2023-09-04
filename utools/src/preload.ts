@@ -1,81 +1,19 @@
-const http = require('http')
-const os = require('os')
-const url = require('url')
-const fs = require('fs')
-const path = require('path')
-
-/**
- * Adds shutdown functionaility to the `http.Server` object
- * @param {http.Server} server The server to add shutdown functionaility to
- * @see https://github.com/thedillonb/http-shutdown
- * @return {WithShutdown}
- */
-function addShutdown(server) {
-  const connections = {}
-  let isShuttingDown = false
-  let connectionCounter = 0
-
-  function destroy(socket, force) {
-    if (force || (socket._isIdle && isShuttingDown)) {
-      socket.destroy()
-      delete connections[socket._connectionId]
-    }
-  }
-
-  function onConnection(socket) {
-    const id = connectionCounter++
-    socket._isIdle = true
-    socket._connectionId = id
-    connections[id] = socket
-
-    socket.on('close', function () {
-      delete connections[id]
-    })
-  }
-
-  server.on('request', function (req, res) {
-    req.socket._isIdle = false
-
-    res.on('finish', function () {
-      req.socket._isIdle = true
-      destroy(req.socket)
-    })
-  })
-
-  server.on('connection', onConnection)
-  server.on('secureConnection', onConnection)
-
-  function shutdown(force, cb) {
-    isShuttingDown = true
-    server.close(function (err) {
-      if (cb) {
-        process.nextTick(function () {
-          cb(err)
-        })
-      }
-    })
-
-    Object.keys(connections).forEach(function (key) {
-      destroy(connections[key], force)
-    })
-  }
-
-  server.shutdown = function (cb) {
-    shutdown(false, cb)
-  }
-
-  server.forceShutdown = function (cb) {
-    shutdown(true, cb)
-  }
-
-  return server
-}
+import http, { RequestListener } from 'http'
+import https from 'https'
+import os from 'os'
+import url from 'url'
+import fs from 'fs'
+import path from 'path'
+import withShutdown from 'http-shutdown'
+import forge from 'node-forge'
+import { IPAddress, NetFamily, ServerInfo, StartServerConfig, WithShutdown } from './types'
+import { SecureContextOptions } from 'tls'
 
 // borrowed from ry who stole it from jack- thanks
 // https://github.com/ry/node_chat/blob/master/fu.js
 const mime = {
   // returns MIME type for extension, or fallback, or octet-steam
-  lookupExtension: function (ext, fallback = 'application/octet-stream') {
+  lookupExtension: function (ext: string, fallback = 'application/octet-stream') {
     return mime.TYPES[ext.toLowerCase()] || fallback
   },
 
@@ -246,7 +184,7 @@ const mime = {
     '.yaml': 'text/yaml',
     '.yml': 'text/yaml',
     '.zip': 'application/zip'
-  }
+  } as Record<string, string>
 }
 
 /**
@@ -257,18 +195,15 @@ const htmlTemplate = {
   html: `<!DOCTYPE html><html lang="zh-cmn-Hans"><head><meta charset="UTF-8" /><title>#{title}</title><style rel="stylesheet">a.icon {padding-left: 1.5em;text-decoration: none;}  a.icon:hover {text-decoration: underline;}  .icon.parent {background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAmlJREFUeNpsU0toU0EUPfPysx/tTxuDH9SCWhUDooIbd7oRUUTMouqi2iIoCO6lceHWhegy4EJFinWjrlQUpVm0IIoFpVDEIthm0dpikpf3ZuZ6Z94nrXhhMjM3c8895977BBHB2PznK8WPtDgyWH5q77cPH8PpdXuhpQT4ifR9u5sfJb1bmw6VivahATDrxcRZ2njfoaMv+2j7mLDn93MPiNRMvGbL18L9IpF8h9/TN+EYkMffSiOXJ5+hkD+PdqcLpICWHOHc2CC+LEyA/K+cKQMnlQHJX8wqYG3MAJy88Wa4OLDvEqAEOpJd0LxHIMdHBziowSwVlF8D6QaicK01krw/JynwcKoEwZczewroTvZirlKJs5CqQ5CG8pb57FnJUA0LYCXMX5fibd+p8LWDDemcPZbzQyjvH+Ki1TlIciElA7ghwLKV4kRZstt2sANWRjYTAGzuP2hXZFpJ/GsxgGJ0ox1aoFWsDXyyxqCs26+ydmagFN/rRjymJ1898bzGzmQE0HCZpmk5A0RFIv8Pn0WYPsiu6t/Rsj6PauVTwffTSzGAGZhUG2F06hEc9ibS7OPMNp6ErYFlKavo7MkhmTqCxZ/jwzGA9Hx82H2BZSw1NTN9Gx8ycHkajU/7M+jInsDC7DiaEmo1bNl1AMr9ASFgqVu9MCTIzoGUimXVAnnaN0PdBBDCCYbEtMk6wkpQwIG0sn0PQIUF4GsTwLSIFKNqF6DVrQq+IWVrQDxAYQC/1SsYOI4pOxKZrfifiUSbDUisif7XlpGIPufXd/uvdvZm760M0no1FZcnrzUdjw7au3vu/BVgAFLXeuTxhTXVAAAAAElFTkSuQmCC') left center no-repeat;}  .icon.dir {background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAd5JREFUeNqMU79rFUEQ/vbuodFEEkzAImBpkUabFP4ldpaJhZXYm/RiZWsv/hkWFglBUyTIgyAIIfgIRjHv3r39MePM7N3LcbxAFvZ2b2bn22/mm3XMjF+HL3YW7q28YSIw8mBKoBihhhgCsoORot9d3/ywg3YowMXwNde/PzGnk2vn6PitrT+/PGeNaecg4+qNY3D43vy16A5wDDd4Aqg/ngmrjl/GoN0U5V1QquHQG3q+TPDVhVwyBffcmQGJmSVfyZk7R3SngI4JKfwDJ2+05zIg8gbiereTZRHhJ5KCMOwDFLjhoBTn2g0ghagfKeIYJDPFyibJVBtTREwq60SpYvh5++PpwatHsxSm9QRLSQpEVSd7/TYJUb49TX7gztpjjEffnoVw66+Ytovs14Yp7HaKmUXeX9rKUoMoLNW3srqI5fWn8JejrVkK0QcrkFLOgS39yoKUQe292WJ1guUHG8K2o8K00oO1BTvXoW4yasclUTgZYJY9aFNfAThX5CZRmczAV52oAPoupHhWRIUUAOoyUIlYVaAa/VbLbyiZUiyFbjQFNwiZQSGl4IDy9sO5Wrty0QLKhdZPxmgGcDo8ejn+c/6eiK9poz15Kw7Dr/vN/z6W7q++091/AQYA5mZ8GYJ9K0AAAAAASUVORK5CYII=') left center no-repeat;}  .icon.file {background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAABnRSTlMAAAAAAABupgeRAAABHUlEQVR42o2RMW7DIBiF3498iHRJD5JKHurL+CRVBp+i2T16tTynF2gO0KSb5ZrBBl4HHDBuK/WXACH4eO9/CAAAbdvijzLGNE1TVZXfZuHg6XCAQESAZXbOKaXO57eiKG6ft9PrKQIkCQqFoIiQFBGlFIB5nvM8t9aOX2Nd18oDzjnPgCDpn/BH4zh2XZdlWVmWiUK4IgCBoFMUz9eP6zRN75cLgEQhcmTQIbl72O0f9865qLAAsURAAgKBJKEtgLXWvyjLuFsThCSstb8rBCaAQhDYWgIZ7myM+TUBjDHrHlZcbMYYk34cN0YSLcgS+wL0fe9TXDMbY33fR2AYBvyQ8L0Gk8MwREBrTfKe4TpTzwhArXWi8HI84h/1DfwI5mhxJamFAAAAAElFTkSuQmCC') left center no-repeat;}</style></head><body><table><tbody><tr><td><a class="icon parent" href="../">../</a></td></tr>#{tr}</tbody></table></body></html>`,
   tr: `<tr><td><a class="icon #{icon}" href="#{href}">#{name}</a></td></tr>`,
   regex: /#{(\w+)}/g,
-  format(str, obj) {
+  format(str: string, obj: Record<string, string>) {
     return str.replaceAll(this.regex, (match, p1) => obj.hasOwnProperty(p1) ? obj[p1] : match)
   }
 }
 
 /**
  * 响应目录页
- * @param dirPath {string}
- * @param res {any}
- * @param resHeaders {any}
  */
-function responseDirectoryPage(dirPath, res, resHeaders) {
+function responseDirectoryPage(dirPath: string, res: any, resHeaders: any) {
   const tr = fs.readdirSync(dirPath).map(name => {
     const d = fs.statSync(path.join(dirPath, name)).isDirectory()
     return {
@@ -288,21 +223,17 @@ function responseDirectoryPage(dirPath, res, resHeaders) {
 
 /**
  * 生成控制器
- * @param base {string}
- * @param cors {boolean}
- * @param showDir {boolean | undefined | null}
- * @return {Function}
  */
-function createController(base, cors = false, showDir = null) {
+function createController(base: string, cors: boolean = false, showDir: boolean | undefined | null = null): RequestListener<any, any> {
   return (req, res) => {
-    const resHeaders = {}
+    const resHeaders: Record<string, string> = {}
     if (cors) resHeaders['Access-Control-Allow-Origin'] = '*'
-    const u = url.parse(req.url)
+    const u = url.parse(req.url || '')
     const pathname = decodeURIComponent(u.pathname || '/')
     let filePath = path.join(base, pathname)
     const dirPath = filePath
 
-    let isDir
+    let isDir: boolean
     try {
       isDir = fs.statSync(filePath).isDirectory()
     } catch (e) {
@@ -340,28 +271,100 @@ function createController(base, cors = false, showDir = null) {
 }
 
 /**
- * 创建服务器
- * @param hostname {string}
- * @param port {number}
- * @param controller {Function}
- * @return {Promise<WithShutdown>}
+ * 生成自签名证书
  */
-function createServer(hostname, port, controller) {
-  return new Promise((resolve, reject) => {
-    const server = addShutdown(http.createServer(controller))
-    if (reject) server.on('error', reject)
-    server.listen(port, hostname, () => resolve(server))
+const createSelfSignedCert = (): SecureContextOptions => {
+  // 生成RSA密钥对，密钥长度为2048位
+  const keys = forge.pki.rsa.generateKeyPair(2048)
+
+  // 创建一个新的X.509证书
+  const cert = forge.pki.createCertificate()
+  // 将公钥设置为生成的公钥
+  cert.publicKey = keys.publicKey
+  // 设置证书的序列号
+  cert.serialNumber = '01'
+
+  // 设置证书的有效期，从当前时间开始，有效期为1年
+  cert.validity.notBefore = new Date()
+  cert.validity.notAfter = new Date()
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1)
+
+  // 定义证书的主题属性，包括通用名称、国家名称、州/省名称、地区名称、组织名称等
+  const attrs = [
+    { name: 'commonName', value: 'localhost' },
+    { name: 'countryName', value: 'US' },
+    { shortName: 'ST', value: 'California' },
+    { name: 'localityName', value: 'San Francisco' },
+    { name: 'organizationName', value: 'My Company' },
+    { shortName: 'OU', value: 'My Company' }
+  ]
+
+  // 设置证书的主题和颁发者属性
+  cert.setSubject(attrs)
+  cert.setIssuer(attrs)
+
+  // 设置证书的扩展属性，如基本约束、密钥用途、扩展密钥用途等
+  cert.setExtensions([
+    {
+      name: 'basicConstraints',
+      cA: true
+    },
+    {
+      name: 'keyUsage',
+      keyCertSign: true,
+      digitalSignature: true,
+      nonRepudiation: true,
+      keyEncipherment: true,
+      dataEncipherment: true
+    },
+    {
+      name: 'extKeyUsage',
+      serverAuth: true,
+      clientAuth: true,
+      codeSigning: true,
+      emailProtection: true,
+      timeStamping: true
+    },
+    {
+      name: 'nsCertType',
+      client: true,
+      server: true,
+      email: true,
+      objsign: true,
+      sslCA: true,
+      emailCA: true,
+      objCA: true
+    }
+  ])
+
+  // 使用生成的私钥自签名证书
+  cert.sign(keys.privateKey)
+
+  // 将生成的私钥和证书转换为PEM格式
+  return {
+    key: forge.pki.privateKeyToPem(keys.privateKey),
+    cert: forge.pki.certificateToPem(cert)
+  }
+}
+
+/**
+ * 创建服务器
+ */
+function createServer(hostname: string, port: number, option?: SecureContextOptions, controller?: RequestListener<any, any>) {
+  return new Promise<WithShutdown>((resolve, reject) => {
+    const server = option ? https.createServer(option, controller) : http.createServer(controller)
+    const withShutdownServer = withShutdown(server)
+    if (reject) withShutdownServer.on('error', reject)
+    withShutdownServer.listen(port, hostname, () => resolve(withShutdownServer))
   })
 }
 
 /**
  * 检查端口号是否被占用
- * @param port {number}
- * @return {Promise<boolean>}
  */
-function checkPort(port) {
-  return new Promise((resolve) => {
-    createServer('localhost', port, null).then((server) => {
+function checkPort(port: number) {
+  return new Promise<boolean>((resolve) => {
+    createServer('localhost', port).then((server) => {
       server.forceShutdown(() => resolve(true))
     }).catch(() => resolve(false))
   })
@@ -369,10 +372,9 @@ function checkPort(port) {
 
 /**
  * 获取随机可用端口号
- * @return {Promise<number>}
  */
 async function randomPort() {
-  let port
+  let port: number
   do {
     port = Math.floor(Math.random() * 65535 + 1)
   } while (!await checkPort(port))
@@ -381,12 +383,9 @@ async function randomPort() {
 
 /**
  * 获取 IP 地址
- * @param family {NetFamily}
- * @param internal {boolean | undefined | null}
- * @return {Array<IPAddress>}
  */
-function getIPAddresses(family = null, internal = null) {
-  const ipAddresses = []
+function getIPAddresses(family: NetFamily | undefined | null = null, internal: boolean | undefined | null = null) {
+  const ipAddresses: Array<IPAddress> = []
   const interfaces = os.networkInterfaces()
   Object.values(interfaces).forEach(items => {
     items?.forEach(item => {
@@ -406,11 +405,9 @@ function getIPAddresses(family = null, internal = null) {
 
 /**
  * 启动服务
- * @param config {StartServerConfig}
- * @return {Promise<ServerInfo>}
  */
-function startServer(config) {
-  return new Promise((resolve, reject) => {
+function startServer(config: StartServerConfig) {
+  return new Promise<ServerInfo>((resolve, reject) => {
     const { base, port, net, cors, showDir } = config
 
     if (!base) throw new Error('请先选择目录')
@@ -418,23 +415,25 @@ function startServer(config) {
     if (!ipAddresses.length) throw new Error('没有可用的 IP 地址')
     const controller = createController(base, cors, showDir)
     const portPromise = port ? Promise.resolve(port) : randomPort()
+    const contextOptions: SecureContextOptions | undefined = net.https ? createSelfSignedCert() : undefined
 
     portPromise.then((mPort) => {
-      const servers = []
-      const serverPromises = ipAddresses.map(address => createServer(address.address, mPort, controller).then(s => {
+      const servers: Array<WithShutdown> = []
+      const serverPromises = ipAddresses.map(address => createServer(address.address, mPort, contextOptions, controller).then(s => {
         servers.push(s)
         return s
       }))
 
       Promise.all(serverPromises).then(() => {
-        const info = {
+        const info: ServerInfo = {
+          protocol: contextOptions ? 'https' : 'http',
           address: ipAddresses,
           port: mPort,
           shutdown: () => Promise.allSettled(servers.map(s => new Promise(resolve => s.shutdown(resolve))))
         }
         resolve(info)
       }).catch((e) => {
-        servers.forEach(s => s.shutdown())
+        servers.forEach(s => s.forceShutdown())
         reject(e)
       })
     })

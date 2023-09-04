@@ -26,6 +26,12 @@
         <el-radio-button label="all">全部</el-radio-button>
       </el-radio-group>
     </el-form-item>
+    <el-form-item label="通信协议">
+      <el-radio-group v-model="data.netProtocol">
+        <el-radio-button label="http">HTTP</el-radio-button>
+        <el-radio-button label="https">HTTPS</el-radio-button>
+      </el-radio-group>
+    </el-form-item>
     <el-form-item label="显示目录">
       <el-radio-group v-model="data.showDir">
         <el-radio-button label="default">默认</el-radio-button>
@@ -63,7 +69,7 @@ import qrcode from 'qrcode'
 import TipBox from '@/components/TipBox.vue'
 import { ConfigItem } from '@/types'
 import { Ref } from 'vue'
-import { ServerInfo } from '@/preload/types'
+import { ServerInfo } from '@/../utools/src/types'
 
 const props = defineProps<{
   config: ConfigItem
@@ -89,7 +95,7 @@ const qrcodeCanvas: Ref<Array<HTMLCanvasElement> | null> = ref(null)
 const links = computed!(() => {
   if (!serverInfo.value) return
   return serverInfo.value!.address?.map(a => ({
-    url: `http://${a.address}:${serverInfo.value!.port}`,
+    url: `${serverInfo.value!.protocol}://${a.address}:${serverInfo.value!.port}`,
     internal: a.internal
   }))
 })
@@ -124,7 +130,8 @@ function toggleServer() {
       port: data.value.port,
       net: {
         family: data.value.netFamily === 'all' ? undefined : data.value.netFamily,
-        internal: data.value.netInterface === 'all' ? undefined : data.value.netInterface === 'inner'
+        internal: data.value.netInterface === 'all' ? undefined : data.value.netInterface === 'inner',
+        https: data.value.netProtocol === 'https'
       },
       showDir: data.value.showDir === 'default' ? undefined : data.value.showDir === 'always',
       cors: data.value.cors

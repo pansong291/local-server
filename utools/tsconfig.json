@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
@@ -13,16 +12,9 @@
     "lib": [
       "ESNext",
       "DOM"
-    ],
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    }
+    ]
   },
   "include": [
-    "src/**/*",
-    "auto-imports.d.ts",
-    "components.d.ts"
+    "src/**/*"
   ]
 }

@@ -4,6 +4,7 @@ export type ConfigItem = {
   port?: number
   netFamily: 'IPv4' | 'IPv6' | 'all'
   netInterface: 'inner' | 'outer' | 'all'
+  netProtocol: 'http' | 'https'
   cors?: boolean
   showDir: 'default' | 'always' | 'never'
 }

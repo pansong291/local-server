@@ -7,6 +7,7 @@ declare global {
     }
     _preload: {
       startServer: (config: StartServerConfig) => Promise<ServerInfo>
+      isDirectory: (p: string) => boolean
     }
   }
 }

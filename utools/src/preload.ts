@@ -447,5 +447,12 @@ function startServer(config: StartServerConfig) {
 }
 
 window._preload = {
-  startServer
+  startServer,
+  isDirectory: (p: string) => {
+    try {
+      return fs.statSync(p).isDirectory()
+    } catch (err) {
+      return false
+    }
+  }
 }

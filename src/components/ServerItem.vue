@@ -1,7 +1,8 @@
 <template>
   <el-form label-position="right" label-width="6em">
     <el-form-item label="目录">
-      <el-input v-model="data.base" readonly placeholder="点击选择目录" @click="chooseDir" :disabled="waiting || !!serverInfo">
+      <el-input v-model="data.base" readonly placeholder="拖动文件夹到此处或点击选择目录" @click="chooseDir" :disabled="waiting || !!serverInfo"
+                @dragover.prevent @drop.prevent="getDragDir">
         <template #append>
           <el-button @click="toggleServer" :loading="waiting">{{ serverInfo ? '停止' : '启动' }}</el-button>
         </template>
@@ -109,6 +110,13 @@ function chooseDir() {
   })
   if (folders?.[0]) {
     data.value.base = folders![0]
+  }
+}
+
+function getDragDir(e: DragEvent) {
+  const file: any = e.dataTransfer?.files?.[0]
+  if (file?.path && window._preload.isDirectory(file.path)) {
+    data.value.base = file.path
   }
 }
 

@@ -114,6 +114,7 @@ function chooseDir() {
 }
 
 function getDragDir(e: DragEvent) {
+  if (waiting.value || serverInfo.value) return
   const file: any = e.dataTransfer?.files?.[0]
   if (file?.path && window._preload.isDirectory(file.path)) {
     data.value.base = file.path

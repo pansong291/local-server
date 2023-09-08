@@ -244,25 +244,25 @@ function createController(base: string, cors: boolean = false, showDir: boolean 
       isDir = fs.statSync(filePath).isDirectory()
     } catch (e) {
       res.writeHead(404, resHeaders)
-      res.end()
+      res.end(String(e))
       return
     }
 
     if (isDir) {
-      filePath = path.join(filePath, 'index.html')
       if (showDir) {
         responseDirectoryPage(dirPath, res, resHeaders)
         return
       }
+      filePath = path.join(filePath, 'index.html')
     }
 
     fs.readFile(filePath, function (err, data) {
       if (err) {
-        if (showDir === false) {
-          res.writeHead(404, resHeaders)
-          res.end()
-        } else {
+        if (isDir && showDir !== false) {
           responseDirectoryPage(dirPath, res, resHeaders)
+        } else {
+          res.writeHead(404, resHeaders)
+          res.end(String(err))
         }
         return
       }

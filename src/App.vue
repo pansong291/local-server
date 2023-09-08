@@ -106,7 +106,11 @@ onBeforeMount!(() => {
   }
   // 初始化函数, 由于 drawer 是懒加载, 需要手动把函数挂载到 window 上
   functionText.value = globalMimeFuncStr.value
-  window._cache.globalMimeFunction = getMimeFunction(globalMimeFuncStr.value)
+  try {
+    window._cache.globalMimeFunction = getMimeFunction(globalMimeFuncStr.value)
+  } catch (e) {
+    console.warn(e)
+  }
   const serverListStr = window.utools?.dbStorage.getItem(StorageKey.SERVER_LIST)
   if (serverListStr) {
     try {

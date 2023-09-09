@@ -8,7 +8,8 @@
     "preview": "vite preview --port 4173",
     "typecheck": "vue-tsc --noEmit",
     "preload-dev": "ncc build utools/src/preload.ts -o utools/upx -w",
-    "preload-build": "ncc build utools/src/preload.ts -o utools/upx"
+    "preload-build": "ncc build utools/src/preload.ts -o utools/upx",
+    "preload-minify": "ncc build utools/src/preload.ts -o utools/upx -m"
   },
   "author": "paso",
   "dependencies": {

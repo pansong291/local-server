@@ -1,4 +1,4 @@
-import { ConfigItem } from '@/types'
+import { ConfigItem, StorageKey } from '@/types'
 
 export function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -26,4 +26,14 @@ export const mimeFuncSuffix = '}'
 
 export function getMimeFunction(content: string) {
   return new Function(`return ${mimeFuncPrefix}${content}${mimeFuncSuffix}`)()
+}
+
+export function saveStorage(key: StorageKey, obj: any) {
+  if (obj !== window.utools.dbStorage.getItem(key)) {
+    window.utools.dbStorage.setItem(key, obj)
+  }
+}
+
+export function getStorage(key: StorageKey) {
+  return window.utools?.dbStorage.getItem(key)
 }

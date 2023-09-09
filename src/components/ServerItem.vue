@@ -74,6 +74,7 @@ import { ServerInfo } from '@/../utools/src/types'
 
 const props = defineProps<{
   config: ConfigItem
+  startActive?: boolean
 }>()
 const emit = defineEmits<{
   (e: 'update:config', d: ConfigItem): void
@@ -130,6 +131,8 @@ function toggleServer() {
       delete window._servers[data.value.id]
       console.log('stopped')
       emit('activeChange', false)
+    }).catch(e => {
+      msg.value = String(e)
     }).finally(() => {
       waiting.value = false
     })
@@ -149,7 +152,7 @@ function toggleServer() {
       window._servers[data.value.id] = info
       emit('activeChange', true)
     }).catch(e => {
-      msg.value = e?.message || e
+      msg.value = String(e)
     }).finally(() => {
       waiting.value = false
     })
@@ -159,6 +162,12 @@ function toggleServer() {
 function openUrl(url: string) {
   window.utools.shellOpenExternal(url)
 }
+
+onMounted!(() => {
+  if (props.startActive) {
+    toggleServer()
+  }
+})
 
 watchPostEffect!(() => {
   if (qrcodeCanvas.value?.length) {

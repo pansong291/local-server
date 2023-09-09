@@ -23,7 +23,8 @@
             </el-space>
           </template>
           <el-card shadow="hover">
-            <server-item v-model:config="item.config" @activeChange="(_) => item.running = _" @delete="deleteItem(item.config.id)" />
+            <server-item v-model:config="item.config" :start-active="item.running" @activeChange="(_) => item.running = _"
+                         @delete="deleteItem(item.config.id)" />
           </el-card>
         </el-collapse-item>
       </el-collapse>
@@ -35,7 +36,7 @@
       <el-space>
         <el-button type="primary" plain @click="onDrawerOkClick" :disabled="!mimeFuncInfo.func">确定</el-button>
         <el-button plain @click="functionText = globalMimeFuncStr">重置</el-button>
-        <el-button text circle :icon="Close" @click="drawerOpened = false"/>
+        <el-button text circle :icon="Close" @click="drawerOpened = false" />
       </el-space>
     </div>
     <tip-box type="primary">
@@ -59,12 +60,12 @@ import { Close, Plus, Setting } from '@element-plus/icons-vue'
 import { isDark, toggleDark } from '@/composables'
 import ServerItem from '@/components/ServerItem.vue'
 import { Ref } from 'vue'
-import { StatedConfigItem, StorageKey } from '@/types'
-import { getMimeFunction, newConfigItem } from '@/utils'
+import { ConfigItem, StatedConfigItem, StorageKey } from '@/types'
+import { getMimeFunction, getStorage, newConfigItem, saveStorage } from '@/utils'
 import FuncTextarea, { FunctionValidateInfo } from '@/components/FuncTextarea.vue'
 import TipBox from '@/components/TipBox.vue'
 
-const activeName: Ref<string> = ref('1')
+const activeName: Ref<string> = ref('')
 const stateItems: Ref<Array<StatedConfigItem>> = ref([])
 const drawerOpened: Ref<boolean> = ref(false)
 const globalMimeFuncStr: Ref<string> = ref('')
@@ -98,7 +99,7 @@ function onDrawerOkClick() {
 }
 
 onBeforeMount!(() => {
-  const mimeFuncStr = window.utools?.dbStorage.getItem(StorageKey.GLOBAL_MIME_FUNC)
+  const mimeFuncStr = getStorage(StorageKey.GLOBAL_MIME_FUNC)
   if (mimeFuncStr || mimeFuncStr === '') {
     globalMimeFuncStr.value = mimeFuncStr
   } else {
@@ -111,13 +112,29 @@ onBeforeMount!(() => {
   } catch (e) {
     console.warn(e)
   }
-  const serverListStr = window.utools?.dbStorage.getItem(StorageKey.SERVER_LIST)
+
+  const runningServers = new Set()
+  const runningListStr = getStorage(StorageKey.RUNNING_SERVERS)
+  if (runningListStr) {
+    try {
+      const runningList: Array<string> = JSON.parse(runningListStr)
+      if (Array.isArray(runningList)) {
+        for (const r of runningList) {
+          runningServers.add(r)
+        }
+      }
+    } catch (e) {
+    }
+  }
+
+  const serverListStr = getStorage(StorageKey.SERVER_LIST)
   if (serverListStr) {
     try {
-      const serverList = JSON.parse(serverListStr)
+      const serverList: Array<ConfigItem> = JSON.parse(serverListStr)
       if (Array.isArray(serverList)) {
         for (const server of serverList) {
           stateItems.value.push({
+            running: runningServers.has(server.id),
             config: newConfigItem(undefined, server)
           })
         }
@@ -125,12 +142,13 @@ onBeforeMount!(() => {
     } catch (e) {
     }
   }
-  const activeItem = window.utools?.dbStorage.getItem(StorageKey.ACTIVE_ITEM)
+
+  const activeItem = getStorage(StorageKey.ACTIVE_ITEM)
   if (activeItem) activeName.value = activeItem
 })
 
 window.utools?.onPluginEnter((action) => {
-  console.log('active with action:', action)
+  console.log('active by action:', action)
   if (action.code === 'add-server') {
     switch (action.type) {
       case 'files':
@@ -154,16 +172,10 @@ window.utools?.onPluginEnter((action) => {
 })
 window.utools?.onPluginOut((processExit) => {
   if (processExit) {
-    if (globalMimeFuncStr.value !== window.utools.dbStorage.getItem(StorageKey.GLOBAL_MIME_FUNC)) {
-      window.utools.dbStorage.setItem(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
-    }
-    const newListStr = JSON.stringify(stateItems.value.map(it => it.config))
-    if (newListStr !== window.utools.dbStorage.getItem(StorageKey.SERVER_LIST)) {
-      window.utools.dbStorage.setItem(StorageKey.SERVER_LIST, newListStr)
-    }
-    if (activeName.value !== window.utools.dbStorage.getItem(StorageKey.ACTIVE_ITEM)) {
-      window.utools.dbStorage.setItem(StorageKey.ACTIVE_ITEM, activeName.value)
-    }
+    saveStorage(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
+    saveStorage(StorageKey.RUNNING_SERVERS, JSON.stringify(stateItems.value.filter(it => it.running).map(it => it.config.id)))
+    saveStorage(StorageKey.SERVER_LIST, JSON.stringify(stateItems.value.map(it => it.config)))
+    saveStorage(StorageKey.ACTIVE_ITEM, activeName.value)
     Object.values(window._servers).forEach(info => {
       info.shutdown()
     })

@@ -17,5 +17,6 @@ export type StatedConfigItem = {
 export enum StorageKey {
   GLOBAL_MIME_FUNC = 'global-mime-func',
   SERVER_LIST = 'server-list',
-  ACTIVE_ITEM = 'active-item'
+  ACTIVE_ITEM = 'active-item',
+  RUNNING_SERVERS = 'running-servers'
 }

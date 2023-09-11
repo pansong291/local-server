@@ -17,7 +17,7 @@ const mime = {
     return mime.TYPES[ext.toLowerCase()] || fallback
   },
 
-// List of most common mime-types, stolen from Rack.
+  // List of most common mime-types, stolen from Rack.
   TYPES: {
     '.3gp': 'video/3gpp',
     '.a': 'application/octet-stream',
@@ -196,7 +196,7 @@ const htmlTemplate = {
   tr: `<tr><td><a class="icon #{icon}" href="#{href}">#{name}</a>#{error}</td></tr>`,
   regex: /#{(\w+)}/g,
   format(str: string, obj: Record<string, string>) {
-    return str.replaceAll(this.regex, (match, p1) => obj.hasOwnProperty(p1) ? obj[p1] : match)
+    return str.replaceAll(this.regex, (match, p1) => (obj.hasOwnProperty(p1) ? obj[p1] : match))
   }
 }
 
@@ -204,20 +204,24 @@ const htmlTemplate = {
  * 响应目录页
  */
 function responseDirectoryPage(dirPath: string, res: any, resHeaders: any) {
-  const tr = fs.readdirSync(dirPath).map(name => {
-    const stat = { d: false, e: '' }
-    try {
-      stat.d = fs.statSync(path.join(dirPath, name)).isDirectory()
-    } catch (e) {
-      stat.e = String(e)
-    }
-    return {
-      icon: stat.d ? 'dir' : 'file',
-      href: stat.e ? '#' + name : stat.d ? name + '/' : name,
-      name,
-      error: stat.e ? `<span class="error">${stat.e}</span>` : ''
-    }
-  }).map(obj => htmlTemplate.format(htmlTemplate.tr, obj)).join('')
+  const tr = fs
+    .readdirSync(dirPath)
+    .map((name) => {
+      const stat = { d: false, e: '' }
+      try {
+        stat.d = fs.statSync(path.join(dirPath, name)).isDirectory()
+      } catch (e) {
+        stat.e = String(e)
+      }
+      return {
+        icon: stat.d ? 'dir' : 'file',
+        href: stat.e ? '#' + name : stat.d ? name + '/' : name,
+        name,
+        error: stat.e ? `<span class="error">${stat.e}</span>` : ''
+      }
+    })
+    .map((obj) => htmlTemplate.format(htmlTemplate.tr, obj))
+    .join('')
   const resp = htmlTemplate.format(htmlTemplate.html, {
     title: dirPath,
     tr
@@ -370,9 +374,11 @@ function createServer(hostname: string, port: number, option?: SecureContextOpti
  */
 function checkPort(port: number) {
   return new Promise<boolean>((resolve) => {
-    createServer('localhost', port).then((server) => {
-      server.forceShutdown(() => resolve(true))
-    }).catch(() => resolve(false))
+    createServer('localhost', port)
+      .then((server) => {
+        server.forceShutdown(() => resolve(true))
+      })
+      .catch(() => resolve(false))
   })
 }
 
@@ -383,7 +389,7 @@ async function randomPort() {
   let port: number
   do {
     port = Math.floor(Math.random() * 65535 + 1)
-  } while (!await checkPort(port))
+  } while (!(await checkPort(port)))
   return port
 }
 
@@ -393,8 +399,8 @@ async function randomPort() {
 function getIPAddresses(family: NetFamily | undefined | null = null, internal: boolean | undefined | null = null) {
   const ipAddresses: Array<IPAddress> = []
   const interfaces = os.networkInterfaces()
-  Object.values(interfaces).forEach(items => {
-    items?.forEach(item => {
+  Object.values(interfaces).forEach((items) => {
+    items?.forEach((item) => {
       const v6 = item.family === 'IPv6'
       if (v6 && item.scopeid) return
       if (family && item.family !== family) return
@@ -425,23 +431,27 @@ function startServer(config: StartServerConfig) {
 
     portPromise.then((mPort) => {
       const servers: Array<WithShutdown> = []
-      const serverPromises = ipAddresses.map(address => createServer(address.address, mPort, contextOptions, controller).then(s => {
-        servers.push(s)
-        return s
-      }))
+      const serverPromises = ipAddresses.map((address) =>
+        createServer(address.address, mPort, contextOptions, controller).then((s) => {
+          servers.push(s)
+          return s
+        })
+      )
 
-      Promise.all(serverPromises).then(() => {
-        const info: ServerInfo = {
-          protocol: contextOptions ? 'https' : 'http',
-          address: ipAddresses,
-          port: mPort,
-          shutdown: () => Promise.allSettled(servers.map(s => new Promise(resolve => s.shutdown(resolve))))
-        }
-        resolve(info)
-      }).catch((e) => {
-        servers.forEach(s => s.forceShutdown())
-        reject(e)
-      })
+      Promise.all(serverPromises)
+        .then(() => {
+          const info: ServerInfo = {
+            protocol: contextOptions ? 'https' : 'http',
+            address: ipAddresses,
+            port: mPort,
+            shutdown: () => Promise.allSettled(servers.map((s) => new Promise((resolve) => s.shutdown(resolve))))
+          }
+          resolve(info)
+        })
+        .catch((e) => {
+          servers.forEach((s) => s.forceShutdown())
+          reject(e)
+        })
     })
   })
 }

@@ -1,8 +1,14 @@
 <template>
   <el-form label-position="right" label-width="6em">
     <el-form-item label="目录">
-      <el-input v-model="data.base" readonly placeholder="拖动文件夹到此处或点击选择目录" @click="chooseDir" :disabled="waiting || !!serverInfo"
-                @dragover.prevent @drop.prevent="getDragDir">
+      <el-input
+        v-model="data.base"
+        readonly
+        placeholder="拖动文件夹到此处或点击选择目录"
+        @click="chooseDir"
+        :disabled="waiting || !!serverInfo"
+        @dragover.prevent
+        @drop.prevent="getDragDir">
         <template #append>
           <el-button @click="toggleServer" :loading="waiting">{{ serverInfo ? '停止' : '启动' }}</el-button>
         </template>
@@ -47,7 +53,7 @@
       <el-button @click="emit('delete', data.id)" type="danger">删除</el-button>
     </el-form-item>
   </el-form>
-  <el-card v-if="!!(links?.length)" shadow="never">
+  <el-card v-if="!!links?.length" shadow="never">
     <div v-for="link in links">
       <el-link v-if="link.internal" type="primary" @click="openUrl(link.url)">{{ link.url }}</el-link>
       <el-popover v-else placement="top">
@@ -96,7 +102,7 @@ const msg: Ref<string> = ref('')
 const qrcodeCanvas: Ref<Array<HTMLCanvasElement> | null> = ref(null)
 const links = computed!(() => {
   if (!serverInfo.value) return
-  return serverInfo.value!.address?.map(a => ({
+  return serverInfo.value!.address?.map((a) => ({
     url: `${serverInfo.value!.protocol}://${a.address}:${serverInfo.value!.port}`,
     internal: a.internal
   }))
@@ -126,36 +132,44 @@ function toggleServer() {
   msg.value = ''
   waiting.value = true
   if (serverInfo.value) {
-    serverInfo.value!.shutdown().then(() => {
-      serverInfo.value = undefined
-      delete window._servers[data.value.id]
-      console.log('stopped')
-      emit('activeChange', false)
-    }).catch(e => {
-      msg.value = String(e)
-    }).finally(() => {
-      waiting.value = false
-    })
+    serverInfo
+      .value!.shutdown()
+      .then(() => {
+        serverInfo.value = undefined
+        delete window._servers[data.value.id]
+        console.log('stopped')
+        emit('activeChange', false)
+      })
+      .catch((e) => {
+        msg.value = String(e)
+      })
+      .finally(() => {
+        waiting.value = false
+      })
   } else {
-    window._preload.startServer({
-      base: data.value.base,
-      port: data.value.port,
-      net: {
-        family: data.value.netFamily === 'all' ? undefined : data.value.netFamily,
-        internal: data.value.netInterface === 'all' ? undefined : data.value.netInterface === 'inner',
-        https: data.value.netProtocol === 'https'
-      },
-      showDir: data.value.showDir === 'default' ? undefined : data.value.showDir === 'always',
-      cors: data.value.cors
-    }).then((info) => {
-      serverInfo.value = info
-      window._servers[data.value.id] = info
-      emit('activeChange', true)
-    }).catch(e => {
-      msg.value = String(e)
-    }).finally(() => {
-      waiting.value = false
-    })
+    window._preload
+      .startServer({
+        base: data.value.base,
+        port: data.value.port,
+        net: {
+          family: data.value.netFamily === 'all' ? undefined : data.value.netFamily,
+          internal: data.value.netInterface === 'all' ? undefined : data.value.netInterface === 'inner',
+          https: data.value.netProtocol === 'https'
+        },
+        showDir: data.value.showDir === 'default' ? undefined : data.value.showDir === 'always',
+        cors: data.value.cors
+      })
+      .then((info) => {
+        serverInfo.value = info
+        window._servers[data.value.id] = info
+        emit('activeChange', true)
+      })
+      .catch((e) => {
+        msg.value = String(e)
+      })
+      .finally(() => {
+        waiting.value = false
+      })
   }
 }
 
@@ -183,7 +197,3 @@ watchPostEffect!(() => {
   }
 })
 </script>
-
-<style scoped lang="scss">
-
-</style>

@@ -5,10 +5,3 @@
       fill="#606266"></path>
   </svg>
 </template>
-
-<script setup lang="ts">
-</script>
-
-<style scoped>
-
-</style>

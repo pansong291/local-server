@@ -21,7 +21,7 @@
     "@types/node": "^20.5.1",
     "@types/qrcode": "^1.5.1",
     "@vitejs/plugin-vue": "^4.3.2",
-    "prettier": "^3.0.2",
+    "prettier": "^2.8.8",
     "sass": "^1.66.1",
     "typescript": "^5.2.2",
     "unplugin-auto-import": "^0.16.6",

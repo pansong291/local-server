@@ -1,7 +1,6 @@
 <template>
   <el-form-item :show-message="false" :validate-status="validateState">
-    <el-input class="mono-textarea" :style="varStyle" type="textarea"
-              spellcheck="false" autosize v-model="value" />
+    <el-input class="mono-textarea" :style="varStyle" type="textarea" spellcheck="false" autosize v-model="value" />
   </el-form-item>
 </template>
 
@@ -60,7 +59,8 @@ watchEffect!(() => {
     bottom: 5px;
   }
 
-  &::before, &::after {
+  &::before,
+  &::after {
     display: block;
     position: absolute;
     pointer-events: none;

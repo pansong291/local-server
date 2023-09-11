@@ -13,7 +13,7 @@
       </el-space>
     </el-header>
     <el-main>
-      <el-collapse v-if="!!(stateItems?.length)" v-model="activeName" accordion>
+      <el-collapse v-if="!!stateItems?.length" v-model="activeName" accordion>
         <el-collapse-item v-for="item in stateItems" :key="item.config.id" :name="item.config.id">
           <template #title>
             <el-space>
@@ -23,8 +23,11 @@
             </el-space>
           </template>
           <el-card shadow="hover">
-            <server-item v-model:config="item.config" :start-active="item.running" @activeChange="(_) => item.running = _"
-                         @delete="deleteItem(item.config.id)" />
+            <server-item
+              v-model:config="item.config"
+              :start-active="item.running"
+              @activeChange="(_) => (item.running = _)"
+              @delete="deleteItem(item.config.id)" />
           </el-card>
         </el-collapse-item>
       </el-collapse>
@@ -46,7 +49,7 @@
         <li>可使用 <code>throw</code> 语句观察表达式的值，例如 <code>throw 1 + 2</code></li>
       </ul>
     </tip-box>
-    <func-textarea v-model="functionText" @update:validate="(_) => mimeFuncInfo = _" />
+    <func-textarea v-model="functionText" @update:validate="(_) => (mimeFuncInfo = _)" />
     <tip-box v-if="!mimeFuncInfo.func" type="error">
       <p class="monospace">{{ mimeFuncInfo.errMsg }}</p>
     </tip-box>
@@ -123,8 +126,7 @@ onBeforeMount!(() => {
           runningServers.add(r)
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   const serverListStr = getStorage(StorageKey.SERVER_LIST)
@@ -139,8 +141,7 @@ onBeforeMount!(() => {
           })
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   const activeItem = getStorage(StorageKey.ACTIVE_ITEM)
@@ -173,10 +174,10 @@ window.utools?.onPluginEnter((action) => {
 window.utools?.onPluginOut((processExit) => {
   if (processExit) {
     saveStorage(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
-    saveStorage(StorageKey.RUNNING_SERVERS, JSON.stringify(stateItems.value.filter(it => it.running).map(it => it.config.id)))
-    saveStorage(StorageKey.SERVER_LIST, JSON.stringify(stateItems.value.map(it => it.config)))
+    saveStorage(StorageKey.RUNNING_SERVERS, JSON.stringify(stateItems.value.filter((it) => it.running).map((it) => it.config.id)))
+    saveStorage(StorageKey.SERVER_LIST, JSON.stringify(stateItems.value.map((it) => it.config)))
     saveStorage(StorageKey.ACTIVE_ITEM, activeName.value)
-    Object.values(window._servers).forEach(info => {
+    Object.values(window._servers).forEach((info) => {
       info.shutdown()
     })
     window._servers = {}

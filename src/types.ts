@@ -1,5 +1,5 @@
 export type ConfigItem = {
-  id: string,
+  id: string
   base: string
   port?: number
   netFamily: 'IPv4' | 'IPv6' | 'all'
@@ -10,7 +10,7 @@ export type ConfigItem = {
 }
 
 export type StatedConfigItem = {
-  running?: boolean,
+  running?: boolean
   config: ConfigItem
 }
 

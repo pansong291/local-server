@@ -172,11 +172,11 @@ window.utools?.onPluginEnter((action) => {
   }
 })
 window.utools?.onPluginOut((processExit) => {
+  saveStorage(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
+  saveStorage(StorageKey.RUNNING_SERVERS, JSON.stringify(stateItems.value.filter((it) => it.running).map((it) => it.config.id)))
+  saveStorage(StorageKey.SERVER_LIST, JSON.stringify(stateItems.value.map((it) => it.config)))
+  saveStorage(StorageKey.ACTIVE_ITEM, activeName.value)
   if (processExit) {
-    saveStorage(StorageKey.GLOBAL_MIME_FUNC, globalMimeFuncStr.value)
-    saveStorage(StorageKey.RUNNING_SERVERS, JSON.stringify(stateItems.value.filter((it) => it.running).map((it) => it.config.id)))
-    saveStorage(StorageKey.SERVER_LIST, JSON.stringify(stateItems.value.map((it) => it.config)))
-    saveStorage(StorageKey.ACTIVE_ITEM, activeName.value)
     Object.values(window._servers).forEach((info) => {
       info.shutdown()
     })

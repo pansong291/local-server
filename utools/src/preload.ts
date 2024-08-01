@@ -1,7 +1,6 @@
 import http, { RequestListener } from 'http'
 import https from 'https'
 import os from 'os'
-import url from 'url'
 import fs from 'fs'
 import path from 'path'
 import withShutdown from 'http-shutdown'
@@ -238,8 +237,9 @@ function createController(base: string, cors: boolean = false, showDir: boolean 
   return (req, res) => {
     const resHeaders: Record<string, string> = {}
     if (cors) resHeaders['Access-Control-Allow-Origin'] = '*'
-    const u = url.parse(req.url || '')
-    const pathname = decodeURIComponent(u.pathname || '/')
+    const paramIndex = req.url.indexOf('?')
+    const urlPath = paramIndex >= 0 ? req.url.substring(0, paramIndex) : req.url
+    const pathname = decodeURIComponent(urlPath || '/')
     let filePath = path.join(base, pathname)
     const dirPath = filePath
 

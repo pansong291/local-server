@@ -200,6 +200,14 @@ const htmlTemplate = {
 }
 
 /**
+ * html 转义
+ * @param text
+ */
+function escapeHtml(text: string) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+}
+
+/**
  * 响应目录页
  */
 function responseDirectoryPage(dirPath: string, res: any, resHeaders: any) {
@@ -231,10 +239,26 @@ function responseDirectoryPage(dirPath: string, res: any, resHeaders: any) {
 }
 
 /**
+ * 捕获异常并显示错误页
+ */
+function handleError(handler: (req: any, res: any) => void) {
+  return function (this: any, req: any, res: any) {
+    try {
+      handler.call(this, req, res)
+    } catch (e: any) {
+      const errStack = escapeHtml(String(e.stack))
+      const html = `<!DOCTYPE html><html lang="zh-cmn-Hans"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Local Server</title><link rel="icon" href="data:image/ico;base64,aWNv"><style rel="stylesheet">body{background-color: #f0f0f2;margin: 0;padding: 0;}div{width:800px;margin:5em auto;padding:1em 2em;background-color:#fdfdff;border-radius:0.5em;box-shadow:2px 3px 7px 2px rgba(0,0,0,0.02);}pre{overflow:auto;}</style></head><body><div><h1>程序异常</h1><pre>${errStack}</pre></div></body></html>`
+      res.writeHead(500, { 'Content-Type': 'text/html' })
+      res.end(html)
+    }
+  }
+}
+
+/**
  * 生成控制器
  */
 function createController(base: string, cors: boolean = false, showDir: boolean | undefined | null = null): RequestListener<any, any> {
-  return (req, res) => {
+  return handleError((req, res) => {
     const resHeaders: Record<string, string> = {}
     if (cors) {
       resHeaders['Access-Control-Allow-Headers'] = '*'
@@ -282,7 +306,7 @@ function createController(base: string, cors: boolean = false, showDir: boolean 
       res.writeHead(200, resHeaders)
       res.end(data)
     })
-  }
+  })
 }
 
 /**

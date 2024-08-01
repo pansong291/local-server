@@ -236,7 +236,12 @@ function responseDirectoryPage(dirPath: string, res: any, resHeaders: any) {
 function createController(base: string, cors: boolean = false, showDir: boolean | undefined | null = null): RequestListener<any, any> {
   return (req, res) => {
     const resHeaders: Record<string, string> = {}
-    if (cors) resHeaders['Access-Control-Allow-Origin'] = '*'
+    if (cors) {
+      resHeaders['Access-Control-Allow-Headers'] = '*'
+      resHeaders['Access-Control-Allow-Methods'] = '*'
+      resHeaders['Access-Control-Allow-Origin'] = '*'
+      resHeaders['Access-Control-Expose-Headers'] = '*'
+    }
     const paramIndex = req.url.indexOf('?')
     const urlPath = paramIndex >= 0 ? req.url.substring(0, paramIndex) : req.url
     const pathname = decodeURIComponent(urlPath || '/')

@@ -37,7 +37,8 @@
           "type": "window",
           "label": "添加当前目录",
           "match": {
-            "app": ["explorer.exe", "Finder.app"]
+            "app": ["explorer.exe", "prevhost.exe", "Finder.app"],
+            "class": ["CabinetWClass"]
           }
         }
       ]

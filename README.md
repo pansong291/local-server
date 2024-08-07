@@ -4,9 +4,13 @@
 
 ![preview-light](https://pansong291.github.io/Pictures/github/pansong291/local-server/Snipaste_2023-09-05_20-32-45.png)
 
+![preview-ip](https://pansong291.github.io/Pictures/github/pansong291/local-server/PixPin-20240807-092603.png)
+
 ![preview-qr](https://pansong291.github.io/Pictures/github/pansong291/local-server/Snipaste_2023-09-05_20-34-58.png)
 
 ![preview-dark](https://pansong291.github.io/Pictures/github/pansong291/local-server/Snipaste_2023-09-05_20-33-18.png)
+
+![preview-page](https://pansong291.github.io/Pictures/github/pansong291/local-server/PixPin-20240807-092624.png)
 
 This template should help get you started developing with Vue 3 in Vite.
 

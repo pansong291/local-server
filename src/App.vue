@@ -2,9 +2,10 @@
   <el-container>
     <el-header>
       <el-space alignment="center" size="large">
-        <el-button :icon="Plus" type="primary" circle @click="addConfigItem('', true)" />
-        <el-button :icon="Setting" circle @click="drawerOpened = true" />
+        <el-button :icon="Plus" type="primary" circle title="添加服务" @click="addConfigItem('', true)" />
+        <el-button :icon="Setting" circle title="设置" @click="drawerOpened = true" />
         <el-switch
+          title="切换主题"
           :style="`--el-switch-on-color: #2c2c2c; --el-switch-off-color: #f2f2f2; --el-switch-border-color: var(--el-border-color);`"
           :model-value="isDark"
           @change="(_) => toggleDark(!!_)"
@@ -27,10 +28,12 @@
               v-model:config="item.config"
               :start-active="item.running"
               @activeChange="(_) => (item.running = _)"
-              @delete="deleteItem(item.config.id)" />
+              @setMapPath="setMapPath"
+              @delete="deleteItem" />
           </el-card>
         </el-collapse-item>
       </el-collapse>
+      <el-empty v-else description="暂无内容" />
     </el-main>
   </el-container>
   <el-drawer v-model="drawerOpened" direction="rtl" size="70%" :with-header="false">
@@ -38,7 +41,7 @@
       <el-text tag="h1" size="large">设置文件 MIME 类型</el-text>
       <el-space>
         <el-button type="primary" plain @click="onDrawerOkClick" :disabled="!mimeFuncInfo.func">确定</el-button>
-        <el-button plain @click="functionText = globalMimeFuncStr">重置</el-button>
+        <el-button plain @click="mimeFuncText = globalMimeFuncStr">重置</el-button>
         <el-button text circle :icon="Close" @click="drawerOpened = false" />
       </el-space>
     </div>
@@ -49,11 +52,30 @@
         <li>可使用 <code>throw</code> 语句观察表达式的值，例如 <code>throw 1 + 2</code></li>
       </ul>
     </tip-box>
-    <func-textarea v-model="functionText" @update:validate="(_) => (mimeFuncInfo = _)" />
+    <func-textarea :func-prefix="mimeFuncPrefix" :func-suffix="commonFuncSuffix" v-model="mimeFuncText" :validator="validateMimeFunc" />
     <tip-box v-if="!mimeFuncInfo.func" type="error">
       <p class="monospace">{{ mimeFuncInfo.errMsg }}</p>
     </tip-box>
   </el-drawer>
+  <el-dialog v-model="dialogVisible" title="设置 URL 路径映射" width="80%" class="map-path-dialog" top="50px">
+    <tip-box type="primary">
+      <ul>
+        <li>参数 <code>p</code> 为 URL 路径</li>
+        <li>返回值为映射后的 URL 路径，也可返回任意假值或不返回，此时映射不生效</li>
+        <li>可使用 <code>throw</code> 语句观察表达式的值，例如 <code>throw 1 + 2</code></li>
+      </ul>
+    </tip-box>
+    <func-textarea :func-prefix="mapPathFuncPrefix" :func-suffix="commonFuncSuffix" v-model="mapPathFuncText" :validator="validateMapPathFunc" />
+    <tip-box v-if="!mapPathFuncInfo.func" type="error">
+      <p class="monospace">{{ mapPathFuncInfo.errMsg }}</p>
+    </tip-box>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="onMapPathConfirm" :disabled="!mapPathFuncInfo.func">确定</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -64,16 +86,34 @@ import { isDark, toggleDark } from '@/composables'
 import ServerItem from '@/components/ServerItem.vue'
 import { Ref } from 'vue'
 import { ConfigItem, StatedConfigItem, StorageKey } from '@/types'
-import { getMimeFunction, getStorage, newConfigItem, saveStorage } from '@/utils'
-import FuncTextarea, { FunctionValidateInfo } from '@/components/FuncTextarea.vue'
+import {
+  commonFuncSuffix,
+  getMapPathFunction,
+  getMimeFunction,
+  getStorage,
+  mapPathFuncPrefix,
+  mimeFuncPrefix,
+  newConfigItem,
+  saveStorage
+} from '@/utils'
+import FuncTextarea from '@/components/FuncTextarea.vue'
 import TipBox from '@/components/TipBox.vue'
+
+type FunctionValidateInfo = {
+  func?: Function
+  errMsg?: string
+}
 
 const activeName: Ref<string> = ref('')
 const stateItems: Ref<Array<StatedConfigItem>> = ref([])
 const drawerOpened: Ref<boolean> = ref(false)
 const globalMimeFuncStr: Ref<string> = ref('')
-const functionText: Ref<string> = ref('')
+const mimeFuncText: Ref<string> = ref('')
 const mimeFuncInfo: Ref<FunctionValidateInfo> = ref({})
+const dialogVisible: Ref<boolean> = ref(false)
+const itemId: Ref<string> = ref('')
+const mapPathFuncText: Ref<string> = ref('')
+const mapPathFuncInfo: Ref<FunctionValidateInfo> = ref({})
 
 function addConfigItem(path?: string, active?: boolean) {
   const statItem: StatedConfigItem = {
@@ -82,6 +122,15 @@ function addConfigItem(path?: string, active?: boolean) {
   stateItems.value.push(statItem)
   if (active) {
     activeName.value = statItem.config.id
+  }
+}
+
+function setMapPath(id: string) {
+  const ind = stateItems.value.findIndex((it) => it.config.id === id)
+  if (ind >= 0) {
+    itemId.value = id
+    dialogVisible.value = true
+    mapPathFuncText.value = stateItems.value[ind].config.mapPath || ''
   }
 }
 
@@ -95,9 +144,41 @@ function deleteItem(id: string) {
 function onDrawerOkClick() {
   if (mimeFuncInfo.value.func) {
     // 记录经过验证的函数内容并把函数挂载到 window 上
-    globalMimeFuncStr.value = functionText.value
+    globalMimeFuncStr.value = mimeFuncText.value
     window._cache.globalMimeFunction = mimeFuncInfo.value.func
     drawerOpened.value = false
+  }
+}
+
+function onMapPathConfirm() {
+  dialogVisible.value = false
+  const ind = stateItems.value.findIndex((it) => it.config.id === itemId.value)
+  if (ind >= 0) {
+    stateItems.value[ind].config.mapPath = mapPathFuncText.value
+  }
+}
+
+function validateMimeFunc() {
+  try {
+    const func: Function = getMimeFunction(mimeFuncText.value)
+    func.call(func, '', '')
+    mimeFuncInfo.value = { func }
+    return true
+  } catch (e) {
+    mimeFuncInfo.value = { errMsg: String(e) }
+    return false
+  }
+}
+
+function validateMapPathFunc() {
+  try {
+    const func: Function = getMapPathFunction(mapPathFuncText.value)
+    func.call(func, '')
+    mapPathFuncInfo.value = { func }
+    return true
+  } catch (e) {
+    mapPathFuncInfo.value = { errMsg: String(e) }
+    return false
   }
 }
 
@@ -109,7 +190,7 @@ onBeforeMount!(() => {
     globalMimeFuncStr.value = `if (/\\btext\\b|.script/g.test(m))\n    return m + ';charset=utf-8'`
   }
   // 初始化函数, 由于 drawer 是懒加载, 需要手动把函数挂载到 window 上
-  functionText.value = globalMimeFuncStr.value
+  mimeFuncText.value = globalMimeFuncStr.value
   try {
     window._cache.globalMimeFunction = getMimeFunction(globalMimeFuncStr.value)
   } catch (e) {
@@ -200,5 +281,11 @@ window.utools?.onPluginOut((processExit) => {
 .drawer-title-line {
   display: flex;
   justify-content: space-between;
+}
+</style>
+
+<style lang="scss">
+.map-path-dialog .el-dialog__body {
+  padding-block: 0;
 }
 </style>

@@ -30,7 +30,8 @@ export default defineConfig({
           enabledCollections: ['ep']
         }),
         // 自动导入 Element Plus 组件
-        ElementPlusResolver()]
+        ElementPlusResolver()
+      ]
     })
   ],
   resolve: {

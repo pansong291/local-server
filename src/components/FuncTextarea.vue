@@ -6,21 +6,17 @@
 
 <script setup lang="ts">
 import { Ref } from 'vue'
-import { getMimeFunction, mimeFuncPrefix, mimeFuncSuffix } from '@/utils'
-
-export type FunctionValidateInfo = {
-  func?: Function
-  errMsg?: string
-}
 
 const props = defineProps<{
+  funcPrefix: string
+  funcSuffix: string
   modelValue: string
+  validator: () => boolean
 }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', v: string): void
-  (e: 'update:validate', v: FunctionValidateInfo): void
 }>()
-const varStyle: Ref<string> = ref(`--mono-before-content: '${mimeFuncPrefix}';--mono-after-content: '${mimeFuncSuffix}';`)
+const varStyle: Ref<string> = ref(`--mono-before-content: '${props.funcPrefix}';--mono-after-content: '${props.funcSuffix}';`)
 
 const validateState: Ref<'' | 'success' | 'error'> = ref('')
 const value = computed!({
@@ -33,15 +29,7 @@ const value = computed!({
 })
 
 watchEffect!(() => {
-  try {
-    const func: Function = getMimeFunction(value.value)
-    func.call(func, '', '')
-    validateState.value = 'success'
-    emit('update:validate', { func })
-  } catch (e) {
-    validateState.value = 'error'
-    emit('update:validate', { errMsg: String(e) })
-  }
+  validateState.value = props.validator() ? 'success' : 'error'
 })
 </script>
 

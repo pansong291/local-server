@@ -17,7 +17,7 @@
   </el-form>
   <el-form :model="data" label-position="right" label-width="6em" inline :disabled="waiting || !!serverInfo">
     <el-form-item label="端口号">
-      <el-input-number v-model="data.port" :min="0" :max="65535" :precision="0" />
+      <el-input-number v-model="data.port" :min="0" :max="65535" :precision="0" placeholder="随机" />
     </el-form-item>
     <el-form-item label="网络协议">
       <el-radio-group v-model="data.netFamily">
@@ -50,6 +50,9 @@
       <el-switch v-model="data.cors" />
     </el-form-item>
     <el-form-item>
+      <el-button @click="emit('setMapPath', data.id)">路径映射</el-button>
+    </el-form-item>
+    <el-form-item>
       <el-button @click="emit('delete', data.id)" type="danger">删除</el-button>
     </el-form-item>
   </el-form>
@@ -77,6 +80,7 @@ import TipBox from '@/components/TipBox.vue'
 import { ConfigItem } from '@/types'
 import { Ref } from 'vue'
 import { ServerInfo } from '@/../utools/src/types'
+import { commonFuncSuffix, mapPathFuncPrefix } from '@/utils'
 
 const props = defineProps<{
   config: ConfigItem
@@ -86,6 +90,7 @@ const emit = defineEmits<{
   (e: 'update:config', d: ConfigItem): void
   (e: 'activeChange', d: boolean): void
   (e: 'delete', id: string): void
+  (e: 'setMapPath', id: string): void
 }>()
 
 const data = computed!({
@@ -137,7 +142,6 @@ function toggleServer() {
       .then(() => {
         serverInfo.value = undefined
         delete window._servers[data.value.id]
-        console.log('stopped')
         emit('activeChange', false)
       })
       .catch((e) => {
@@ -157,7 +161,8 @@ function toggleServer() {
           https: data.value.netProtocol === 'https'
         },
         showDir: data.value.showDir === 'default' ? undefined : data.value.showDir === 'always',
-        cors: data.value.cors
+        cors: data.value.cors,
+        mapPath: data.value.mapPath ? `${mapPathFuncPrefix}${data.value.mapPath}${commonFuncSuffix}` : undefined
       })
       .then((info) => {
         serverInfo.value = info

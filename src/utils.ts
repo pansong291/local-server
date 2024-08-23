@@ -17,15 +17,21 @@ export function newConfigItem(path?: string, old?: ConfigItem): ConfigItem {
     netProtocol: old?.netProtocol || 'http',
     showDir: old?.showDir || 'default',
     cors: old?.cors || undefined,
-    port: old?.port || undefined
+    port: old?.port || undefined,
+    mapPath: old?.mapPath || undefined
   }
 }
 
 export const mimeFuncPrefix = 'function (p, m) {'
-export const mimeFuncSuffix = '}'
+export const mapPathFuncPrefix = 'function (p) {'
+export const commonFuncSuffix = '}'
 
 export function getMimeFunction(content: string) {
-  return new Function(`return ${mimeFuncPrefix}${content}${mimeFuncSuffix}`)()
+  return new Function(`return ${mimeFuncPrefix}${content}${commonFuncSuffix}`)()
+}
+
+export function getMapPathFunction(content: string) {
+  return new Function(`return ${mapPathFuncPrefix}${content}${commonFuncSuffix}`)()
 }
 
 export function saveStorage(key: StorageKey, obj: any) {

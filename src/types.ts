@@ -7,6 +7,10 @@ export type ConfigItem = {
   netProtocol: 'http' | 'https'
   cors?: boolean
   showDir: 'default' | 'always' | 'never'
+  /**
+   * 仅有函数体内的部分
+   */
+  mapPath?: string
 }
 
 export type StatedConfigItem = {

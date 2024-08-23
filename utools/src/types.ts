@@ -20,6 +20,10 @@ export type StartServerConfig = {
   }
   cors?: boolean
   showDir?: boolean
+  /**
+   * 完整的函数声明
+   */
+  mapPath?: string
 }
 
 export type ServerInfo = {

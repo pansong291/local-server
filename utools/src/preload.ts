@@ -257,7 +257,12 @@ function handleError(handler: (req: any, res: any) => void) {
 /**
  * 生成控制器
  */
-function createController(base: string, cors: boolean = false, showDir: boolean | undefined | null = null): RequestListener<any, any> {
+function createController(
+  base: string,
+  cors: boolean = false,
+  showDir: boolean | undefined | null = null,
+  mapPath: string | undefined | null = null
+): RequestListener<any, any> {
   return handleError((req, res) => {
     const resHeaders: Record<string, string> = {}
     if (cors) {
@@ -269,7 +274,7 @@ function createController(base: string, cors: boolean = false, showDir: boolean 
     const paramIndex = req.url.indexOf('?')
     const urlPath = paramIndex >= 0 ? req.url.substring(0, paramIndex) : req.url
     const pathname = decodeURIComponent(urlPath || '/')
-    let filePath = path.join(base, pathname)
+    let filePath = path.join(base, mapPath ? new Function(`return ${mapPath}`)()(pathname) : pathname)
     const dirPath = filePath
 
     let isDir: boolean
@@ -449,12 +454,12 @@ function getIPAddresses(family: NetFamily | undefined | null = null, internal: b
  */
 function startServer(config: StartServerConfig) {
   return new Promise<ServerInfo>((resolve, reject) => {
-    const { base, port, net, cors, showDir } = config
+    const { base, port, net, cors, showDir, mapPath } = config
 
     if (!base) throw new Error('请先选择目录')
     const ipAddresses = getIPAddresses(net.family, net.internal)
     if (!ipAddresses.length) throw new Error('没有可用的 IP 地址')
-    const controller = createController(base, cors, showDir)
+    const controller = createController(base, cors, showDir, mapPath)
     const portPromise = port ? Promise.resolve(port) : randomPort()
     const contextOptions: SecureContextOptions | undefined = net.https ? createSelfSignedCert() : undefined
 

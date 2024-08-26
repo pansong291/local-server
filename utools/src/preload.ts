@@ -246,7 +246,7 @@ function handleError(handler: (req: any, res: any) => void) {
     try {
       handler.call(this, req, res)
     } catch (e: any) {
-      const errStack = escapeHtml(String(e.stack))
+      const errStack = escapeHtml(String(e?.stack ?? e))
       const html = `<!DOCTYPE html><html lang="zh-cmn-Hans"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Local Server</title><link rel="icon" href="data:image/ico;base64,aWNv"><style rel="stylesheet">body{background-color: #f0f0f2;margin: 0;padding: 0;}div{width:800px;margin:5em auto;padding:1em 2em;background-color:#fdfdff;border-radius:0.5em;box-shadow:2px 3px 7px 2px rgba(0,0,0,0.02);}pre{overflow:auto;}</style></head><body><div><h1>程序异常</h1><pre>${errStack}</pre></div></body></html>`
       res.writeHead(500, { 'Content-Type': 'text/html' })
       res.end(html)

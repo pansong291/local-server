@@ -261,9 +261,9 @@ function handleError(handler: (req: any, res: any) => void) {
  */
 function createController(
   base: string,
-  cors: boolean = false,
-  showDir: boolean | undefined | null = null,
-  mapPath: string | undefined | null = null
+  cors: boolean | undefined | null,
+  showDir: boolean | undefined | null,
+  mapPath: string
 ): RequestListener<any, any> {
   return handleError((req, res) => {
     const resHeaders: Record<string, string> = {}
@@ -284,7 +284,7 @@ function createController(
     const paramIndex = req.url.indexOf('?')
     const urlPath = paramIndex >= 0 ? req.url.substring(0, paramIndex) : req.url
     const pathname = decodeURIComponent(urlPath || '/')
-    let filePath = path.join(base, mapPath ? new Function(`return ${mapPath}`)()(pathname) : pathname)
+    let filePath = path.join(base, new Function(`return ${mapPath}`)()(pathname) || pathname)
     const dirPath = filePath
 
     let isDir: boolean

@@ -23,7 +23,7 @@ export type StartServerConfig = {
   /**
    * 完整的函数声明
    */
-  mapPath?: string
+  mapPath: string
 }
 
 export type ServerInfo = {

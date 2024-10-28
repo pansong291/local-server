@@ -162,7 +162,7 @@ function toggleServer() {
         },
         showDir: data.value.showDir === 'default' ? undefined : data.value.showDir === 'always',
         cors: data.value.cors,
-        mapPath: data.value.mapPath ? `${mapPathFuncPrefix}${data.value.mapPath}${commonFuncSuffix}` : undefined
+        mapPath: `${mapPathFuncPrefix}${data.value.mapPath || ''}${commonFuncSuffix}`
       })
       .then((info) => {
         serverInfo.value = info

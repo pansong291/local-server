@@ -8,6 +8,8 @@ import forge from 'node-forge'
 import { IPAddress, NetFamily, ServerInfo, StartServerConfig, WithShutdown } from './types'
 import { SecureContextOptions } from 'tls'
 
+const MB100 = 100 * 1024 * 1024
+
 // borrowed from ry who stole it from jack- thanks
 // https://github.com/ry/node_chat/blob/master/fu.js
 const mime = {
@@ -266,11 +268,19 @@ function createController(
   return handleError((req, res) => {
     const resHeaders: Record<string, string> = {}
     if (cors) {
-      resHeaders['Access-Control-Allow-Headers'] = '*'
-      resHeaders['Access-Control-Allow-Methods'] = '*'
-      resHeaders['Access-Control-Allow-Origin'] = '*'
-      resHeaders['Access-Control-Expose-Headers'] = '*'
+      Object.assign(resHeaders, {
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Expose-Headers': '*'
+      })
     }
+    if (req.method?.toLowerCase() === 'options') {
+      res.writeHead(200, resHeaders)
+      res.end()
+      return
+    }
+
     const paramIndex = req.url.indexOf('?')
     const urlPath = paramIndex >= 0 ? req.url.substring(0, paramIndex) : req.url
     const pathname = decodeURIComponent(urlPath || '/')
@@ -294,22 +304,34 @@ function createController(
       filePath = path.join(filePath, 'index.html')
     }
 
-    fs.readFile(filePath, function (err, data) {
-      if (err) {
+    fs.stat(filePath, (err, stats) => {
+      if (err || stats.isDirectory() || !stats.isFile()) {
         if (isDir && showDir !== false) {
           responseDirectoryPage(dirPath, res, resHeaders)
         } else {
           res.writeHead(404, resHeaders)
-          res.end(String(err))
+          res.end(String(err ?? 'Not file'))
         }
         return
       }
 
-      // return the document
       const defMime = mime.lookupExtension(path.extname(filePath))
-      resHeaders['Content-Type'] = window._cache?.globalMimeFunction?.(filePath, defMime) || defMime
+      const contentType = window._cache?.globalMimeFunction?.(filePath, defMime) || defMime
+
+      Object.assign(resHeaders, {
+        'Content-Type': contentType,
+        'Content-Length': String(stats.size)
+      })
       res.writeHead(200, resHeaders)
-      res.end(data)
+
+      const readStream = fs.createReadStream(filePath)
+      readStream.on('error', (err) => {
+        res.writeHead(500, resHeaders)
+        res.end(String(err))
+      })
+      readStream.on('end', () => res.end())
+
+      readStream.pipe(res)
     })
   })
 }
